@@ -8,19 +8,12 @@ if (typeof Proxy !== 'object' || typeof Proxy.create !== 'function' || typeof We
 // node needs to be run with the `--harmony` flag to get below exports
 
 binding.nilWrap = function nilWrap(o){
-  return createProxy(o, NilForwarder);
-}
+  return createProxy(o, NilForwardingHandler);
+};
 
-function createProxy(target, Handler){
-  var handler = new Handler(target = wrapnil(target));
-
-  return typeof target === 'function'
-    ? Proxy.createFunction(handler,
-        function(){ return handler.apply(this, _slice.call(arguments)) },
-        function(){ return handler.construct(_slice.call(arguments)) })
-    : Proxy.create(handler, Object.getPrototypeOf(target));
-}
-
+binding.recursiveNilWrap = function recursiveNilWrap(o){
+  return wrap(o);
+};
 
 
 var _slice  = Array.prototype.slice,
@@ -33,8 +26,20 @@ var nilDesc = { value: nil,
                 enumerable: false,
                 configurable: true };
 
+
+
 function isObject(o){
   return o != null && typeof o === 'object' || typeof o === 'function';
+}
+
+
+function createProxy(target, Handler){
+  var handler = new Handler(target = wrapnil(target));
+  return typeof target === 'function'
+    ? Proxy.createFunction(handler,
+        function(){ return handler.apply(this, _slice.call(arguments)) },
+        function(){ return handler.construct(_slice.call(arguments)) })
+    : Proxy.create(handler, Object.getPrototypeOf(target));
 }
 
 function wrapnil(value){
@@ -66,12 +71,17 @@ function handleBrokenProcessEnv(handler, target){
   }
 }
 
-function NilForwarder(target){
+
+// ############################
+// ### NilForwardingHandler ###
+// ############################
+
+function NilForwardingHandler(target){
   this.target = target;
   handleBrokenProcessEnv(this, target);
 }
 
-NilForwarder.prototype = {
+NilForwardingHandler.prototype = {
   getOwnPropertyNames: function(){
     return Object.getOwnPropertyNames(this.target);
   },
@@ -127,96 +137,93 @@ NilForwarder.prototype = {
 
 
 
+// ###############
+// ### WrapMap ###
+// ###############
 
 function WrapMap(primitiveWrap, objectWrap) {
   if (!(this instanceof WrapMap)) {
-    return new WrapMap(wrapper);
+    return new WrapMap(primitiveWrap, objectWrap);
   }
 
-  var wrapped = new WeakMap;
-  var unwrapped = new WeakMap;
+  this.wrapped = new WeakMap;
+  this.unwrapped = new WeakMap;
+  this.wrapPrimitive = primitiveWrap || function(o){ return o };
+  this.wrapObject = objectWrap || function(o){ return o };
+}
 
-  function wrap(o, isDesc){
-    if (isDesc === true) {
-      return wrapDesc(o);
-    } else if (!isObject(o)) {
-      return primitiveWrap(o);
-    } else if (wrapped.has(o)) {
+WrapMap.prototype = {
+  constructor: WrapMap,
+  wrap: function wrap(o, isDesc){
+    if (!isObject(o)) {
+      return this.wrapPrimitive(o);
+    } else if (this.wrapped.has(o)) {
       return o;
-    } else if (unwrapped.has(o)) {
-      return unwrapped.get(o);
+    } else if (isDesc === true) {
+      if ('value' in o) o.value = this.wrap(o.value);
+      else {
+        if ('set' in o) o.set = this.wrap(o.set);
+        if ('get' in o) o.get = this.wrap(o.get);
+      }
+      return o;
+    } else if (this.unwrapped.has(o)) {
+      return this.unwrapped.get(o);
     } else {
-      var p = objectWrap(o);
+      var p = this.wrapObject(o);
       if (isObject(p)) {
-        wrapped.set(p, o);
-        unwrapped.set(o, p);
+        this.wrapped.set(p, o);
+        this.unwrapped.set(o, p);
       }
       return p;
     }
-  }
-
-  function unwrap(o, isDesc){
-    if (isDesc === true) {
-      return unwrapDesc(o);
-    } else if (!isObject(o)) {
-      return primitiveWrap(o);
-    } else if (!wrapped.has(o)) {
+  },
+  unwrap: function unwrap(o, isDesc){
+    if (!isObject(o)) {
+      return this.wrapPrimitive(o);
+    } else if (!this.wrapped.has(o)) {
+      return o;
+    } else if (isDesc === true) {
+      if ('value' in o) o.value = this.unwrap(o.value);
+      else {
+        if ('set' in o) o.set = this.unwrap(o.set);
+        if ('get' in o) o.get = this.unwrap(o.get);
+      }
       return o;
     } else {
-      return wrapped.get(o);
+      return this.wrapped.get(o);
     }
-  }
-
-  function has(o){
-    return isObject(o) && wrapped.has(o);
-  }
-
-  function remove(o){
-    var p = unwrap(o);
-    if (o !== p)
-      wrapped.delete(o);
+  },
+  has: function has(o){
+    return isObject(o) && this.wrapped.has(o);
+  },
+  remove: function remove(o){
+    var p = this.unwrap(o);
+    if (o !== p) {
+      this.wrapped.delete(o);
+    }
     return p;
   }
-
-  function wrapDesc(o){
-    if (isObject(o) && !wrapped.has(o)) {
-      if ('value' in o) o.value = wrap(o.value);
-      if (o.set) o.set = wrap(o.set);
-      if (o.get) o.get = wrap(o.get);
-    }
-    return o;
-  }
-
-  function unwrapDesc(o){
-    if (isObject(o) && wrapped.has(o)) {
-      if ('value' in o) o.value = unwrap(o.value);
-      if (o.set) o.set = unwrap(o.set);
-      if (o.get) o.get = unwrap(o.get);
-    }
-    return o;
-  }
-
-  this.wrap = wrap;
-  this.unwrap = unwrap;
-  this.remove = remove;
-  this.has = has;
-}
+};
 
 
 
-
-
-var wrapmap = new WrapMap(wrapnil, function(o){
+var nilmap = new WrapMap(wrapnil, function(o){
   return createProxy(o, NilMembraneHandler);
 });
 
-var wrap = wrapmap.wrap,
-    unwrap = wrapmap.unwrap;
 
-binding.recursiveNilWrap = function recursiveNilWrap(o){
-  return wrap(o);
-};
+function wrap(o, d){
+  return nilmap.wrap(o, d);
+}
 
+function unwrap(o, d){
+  return nilmap.unwrap(o, d);
+}
+
+
+// ##########################
+// ### NilMembraneHandler ###
+// ##########################
 
 function NilMembraneHandler(target){
   this.target = target;

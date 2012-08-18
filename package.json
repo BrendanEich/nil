@@ -1,6 +1,6 @@
 {
   "name": "nil",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": "Brandon Benvie",
   "description": "A falsey object that returns itself for all properties and when invoked.",
   "main": "nil.js",
