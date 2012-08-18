@@ -141,7 +141,7 @@ function WrapMap(primitiveWrap, objectWrap) {
       return wrapDesc(o);
     } else if (!isObject(o)) {
       return primitiveWrap(o);
-    } if (wrapped.has(o)) {
+    } else if (wrapped.has(o)) {
       return o;
     } else if (unwrapped.has(o)) {
       return unwrapped.get(o);
@@ -160,7 +160,7 @@ function WrapMap(primitiveWrap, objectWrap) {
       return unwrapDesc(o);
     } else if (!isObject(o)) {
       return primitiveWrap(o);
-    } if (!wrapped.has(o)) {
+    } else if (!wrapped.has(o)) {
       return o;
     } else {
       return wrapped.get(o);
