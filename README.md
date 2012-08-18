@@ -1,6 +1,13 @@
 # nil
 __nil__ is nothing. falsey. nada. zero. zip. It's a nothing thing that will eat everything you throw at it and return itself.
 
+## installation
+Installation via npm is the best route. Bindings for OS X and Windows are included.
+
+    npm install nil
+
+You can also get those bindings [here on github](https://github.com/downloads/Benvie/nil/prebuilt-0.0.6.zip). That folder needs to be in the root nil directory.
+
 ## it does.. what?
 It does a lot of nothing
 
@@ -16,6 +23,24 @@ nil === nil()                        // returns nil when called
 Object.prototype.toString.call(nil)  // '[object Nil]'
 Object.keys(nil).length == 0         // returns empty array when enumerated
 Object.getPrototypeOf(nil)           // null
+```
+
+## toString
+In order to support coercion to empty string (instead of 'undefined') nil.toString does return a function.
+
+```javascript
+var nilToString = nil.toString;
+!nilToString === true                        // is NOT falsey
+typeof nilToString == 'function'             // is type function
+nilToString() == ''                          // returns empty string
+Object.getPrototypeOf(nilToString) === nil   // inherits from nil
+nilToString === nilToString.call             // call property returns self
+nilToString === nilToString.apply            // apply property returns self
+nilToString === nilToString.bind             // bind property returns self
+nilToString === nilToString.toString         // toString property returns self
+nilToString.any.other.property === nil       // because it inherits from nil
+Object.keys(nilToString).length == 0         // no enumerable keys
+Object.getOwnPropertyNames(nilToString) == 3 // ['call', 'apply', 'bind']
 ```
 
 ## nilWrap and recursiveNilWrap
@@ -44,24 +69,6 @@ console.log(_global.Object.prototype); // {}
 
 
 ## notes
-
-### toString
-In order to support coercion to empty string (instead of 'undefined') nil.toString does return a function.
-
-```javascript
-var nilToString = nil.toString;
-!nilToString === true                        // is NOT falsey
-typeof nilToString == 'function'             // is type function
-nilToString() == ''                          // returns empty string
-Object.getPrototypeOf(nilToString) === nil   // inherits from nil
-nilToString === nilToString.call             // call property returns self
-nilToString === nilToString.apply            // apply property returns self
-nilToString === nilToString.bind             // bind property returns self
-nilToString === nilToString.toString         // toString property returns self
-nilToString.any.other.property === nil       // because it inherits from nil
-Object.keys(nilToString).length == 0         // no enumerable keys
-Object.getOwnPropertyNames(nilToString) == 3 // ['call', 'apply', 'bind']
-```
 
 ### ToNumber
 Because nil is `typeof === 'undefined'` coercion to number is unfortunately `NaN`. ES5 spec does not defer to `valueOf` to coerce `undefined` to a number. V8 appears to follow the spec so it seems impossible to influence the outcome of this coercion. Therefore `nil` isn't useful in math operations. The following is useful for this problem (with or without nil);
