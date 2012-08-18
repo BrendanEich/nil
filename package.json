@@ -1,0 +1,16 @@
+{
+  "name": "nil",
+  "version": "0.0.1",
+  "description": "An object that is nothing",
+  "main": "index.js",
+  "keywords": [
+    "nil"
+  ],
+  "dependencies": {},
+  "author": "Brandon Benvie",
+  "license": "MIT",
+  "scripts": {
+    "install": "node-gyp rebuild"
+  },
+  "gypfile": true
+}
