@@ -1,6 +1,6 @@
 {
   "name": "nil",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "author": "Brandon Benvie",
   "description": "A falsey object that returns itself for all properties and when invoked.",
   "main": "nil.js",
@@ -9,7 +9,8 @@
     "url": "https://github.com/Benvie/nil.git"
   },
   "scripts": {
-    "install": "node ./nil.js"
+    "install": "node ./nil.js",
+    "update": "node ./nil.js"
   },
   "keywords": [
     "nil"
