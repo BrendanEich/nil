@@ -5,7 +5,7 @@ __nil__ is nothing. falsey. nada. zero. zip. It's a nothing thing that will eat 
 It does a lot of nothing
 
 ```javascript
-var nil = require('nil');
+var nil = require('nil').nil;
 !nil                                 // is falsey in boolean comparisons
 nil == null                          // in null/undefined equality class
 typeof nil == 'undefined'            // type is undefined
@@ -17,6 +17,31 @@ Object.prototype.toString.call(nil)  // '[object Nil]'
 Object.keys(nil).length == 0         // returns empty array when enumerated
 Object.getPrototypeOf(nil)           // null
 ```
+
+## nilWrap and recursiveNilWrap
+If run node with the additional flag `--harmony` (as in `node --harmony yourmodule`) two additional features are exported. The purpose of both of these is to create or wrap existing objects and cause them to return __nil__ any place they would usually return `undefined`. The difference between the two is that `nilWrap` only wraps the given object, while `recursiveNilWrap` will wrap all non-primitive values it returns. The latter essentially allows changing the mechanics of JS at large, when accessing things through the portal of nil.
+
+```javascript
+// the basic version is useful for wrapping prototypes and creating nil-returning classes
+var nilWrap = require('nil').nilWrap;
+
+function NilObject(){}
+NilObject.prototype = nilWrap(NilObject.prototype);
+
+var test = new NilObject;
+test.whatever = 'some value';
+console.log(test.whatever); // 'some value'
+console.log(test.x.y.a.z.y.s.g.s); // 'undefined' (nil)
+```
+
+```javascript
+var recursiveNilWrap = require('nil').recursiveNilWrap;
+var _global = recursiveNilWrap(global);
+console.log(_global.now.everything.returns.nil.instead.of.undefined); // 'undefined' (nil)
+console.log(_global.Object.prototype.doesnt.have.cheese.pizzas); // 'undefined' (nil)
+console.log(_global.Object.prototype); // {}
+```
+
 
 ## notes
 
