@@ -1,16 +1,20 @@
 {
   "name": "nil",
   "version": "0.0.1",
-  "description": "An object that is nothing",
-  "main": "index.js",
+  "author": "Brandon Benvie",
+  "description": "A falsey object that returns itself for all properties and when invoked.",
+  "main": "nil.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Benvie/nil.git"
+  },
+  "scripts": {
+    "install": "node ./nil.js"
+  },
   "keywords": [
     "nil"
   ],
   "dependencies": {},
-  "author": "Brandon Benvie",
   "license": "MIT",
-  "scripts": {
-    "install": "node ./index.js"
-  },
   "gypfile": true
 }
